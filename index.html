@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EdgeSizer — Kelly Bet Size & EV Calculator for Prediction Markets</title>
+<meta name="description" content="Free Kelly criterion calculator for Polymarket, Kalshi and other prediction markets. Compute edge, expected value, optimal stake, arbitrage and odds conversion instantly. No signup.">
+<meta name="keywords" content="kelly criterion calculator, polymarket calculator, kalshi calculator, prediction market bet size, expected value calculator, arbitrage calculator, odds converter">
+<link rel="canonical" href="https://gelimorto2.github.io/edgesizer/">
+<meta property="og:title" content="EdgeSizer — Kelly & EV Calculator for Prediction Markets">
+<meta property="og:description" content="Size your prediction market bets like a pro. Edge, EV, fractional Kelly, arbitrage checker. Free, no signup.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gelimorto2.github.io/edgesizer/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"EdgeSizer","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://gelimorto2.github.io/edgesizer/"}</script>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#16181d;--mute:#5d6470;--line:#e3e4e8;--acc:#0a7d5a;--acc2:#e8f5ef;--bad:#b3261e;--badbg:#fbeceb}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#171a21;--ink:#e8eaee;--mute:#9aa1ad;--line:#2a2e38;--acc:#3ccf98;--acc2:#12291f;--bad:#ff8a80;--badbg:#2b1614}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:0 16px}
+.wrap{max-width:960px;margin:0 auto;padding-block:32px 64px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.15;margin:0 0 8px;letter-spacing:-.02em}h2{font-size:19px;margin:0 0 14px}
+.lede{color:var(--mute);margin:0 0 28px;max-width:62ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.stat{background:var(--bg);border-radius:10px;padding:10px 12px}.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--mute)}
+.verdict{margin-top:14px;padding:12px;border-radius:10px;background:var(--acc2);color:var(--acc);font-weight:600}
+.verdict.bad{background:var(--badbg);color:var(--bad)}
+.full{grid-column:1/-1}
+.tip{margin-top:28px}.addr{font-family:ui-monospace,Menlo,monospace;font-size:13px;word-break:break-all;background:var(--bg);padding:10px;border-radius:8px;border:1px dashed var(--line)}
+button{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:10px 14px;font:600 14px system-ui;cursor:pointer;margin-top:10px}
+footer{margin-top:40px;color:var(--mute);font-size:13px}
+.faq h3{font-size:15px;margin:16px 0 4px}.faq p{margin:0;color:var(--mute)}
+</style>
+</head>
+<body><div class="wrap">
+<h1>EdgeSizer</h1>
+<p class="lede">How much should you bet? Enter the market price and what you think the real probability is. EdgeSizer shows your edge, expected value and the Kelly stake for Polymarket, Kalshi or any binary market. Everything runs in your browser.</p>
+
+<div class="grid">
+ <section class="card">
+  <h2>Kelly stake calculator</h2>
+  <div class="row">
+   <div><label for="price">Market price of YES (¢)</label><input id="price" type="number" value="40" min="0.1" max="99.9" step="0.1"></div>
+   <div><label for="prob">Your true probability (%)</label><input id="prob" type="number" value="55" min="0" max="100" step="0.1"></div>
+  </div>
+  <div class="row">
+   <div><label for="bank">Bankroll ($)</label><input id="bank" type="number" value="1000" min="0" step="1"></div>
+   <div><label for="frac">Kelly fraction</label><select id="frac"><option value="1">Full Kelly</option><option value="0.5" selected>Half Kelly</option><option value="0.25">Quarter Kelly</option><option value="0.1">Tenth Kelly</option></select></div>
+  </div>
+  <label for="fee">Fee on winnings (%)</label><input id="fee" type="number" value="0" min="0" max="50" step="0.1">
+  <div class="out">
+   <div class="stat"><span>Side</span><b id="oSide">–</b></div>
+   <div class="stat"><span>Edge</span><b id="oEdge">–</b></div>
+   <div class="stat"><span>EV per $1</span><b id="oEv">–</b></div>
+   <div class="stat"><span>Suggested stake</span><b id="oStake">–</b></div>
+   <div class="stat"><span>Shares</span><b id="oShares">–</b></div>
+   <div class="stat"><span>Profit if right</span><b id="oWin">–</b></div>
+  </div>
+  <div id="verdict" class="verdict">–</div>
+ </section>
+
+ <section class="card">
+  <h2>Arbitrage checker</h2>
+  <p class="lede" style="margin:0 0 6px">Buy YES on one market and NO on another (or both on the same market). If the two prices add up to less than $1, the profit is locked in whichever way it resolves.</p>
+  <div class="row">
+   <div><label for="ay">Best YES ask (¢)</label><input id="ay" type="number" value="47" step="0.1"></div>
+   <div><label for="an">Best NO ask (¢)</label><input id="an" type="number" value="50" step="0.1"></div>
+  </div>
+  <label for="abud">Budget ($)</label><input id="abud" type="number" value="500" step="1">
+  <div class="out">
+   <div class="stat"><span>Cost per pair</span><b id="aCost">–</b></div>
+   <div class="stat"><span>Locked return</span><b id="aRet">–</b></div>
+   <div class="stat"><span>Pairs</span><b id="aPairs">–</b></div>
+   <div class="stat"><span>Guaranteed profit</span><b id="aProf">–</b></div>
+  </div>
+  <div id="aVerdict" class="verdict">–</div>
+
+  <h2 style="margin-top:26px">Odds converter</h2>
+  <div class="row">
+   <div><label for="cPrice">Price / implied %</label><input id="cPrice" type="number" value="40" step="0.1"></div>
+   <div><label>Decimal · American</label><div class="stat" style="padding:9px 12px"><b id="cOut" style="font-size:16px">–</b></div></div>
+  </div>
+ </section>
+</div>
+
+<section class="card tip">
+ <h2>Did this help you size a winning bet?</h2>
+ <p class="lede" style="margin:0 0 10px">EdgeSizer is free, with no ads and no tracking. If it saved you from over-betting, you can tip in USDC or ETH on Base, Polygon, Arbitrum or Ethereum. Pay what you want: $5 keeps the tool going.</p>
+ <div class="addr" id="addr">0x588289357D83Fa602611794f894E7b6355FC8345</div>
+ <button onclick="navigator.clipboard.writeText(document.getElementById('addr').textContent);this.textContent='Copied ✓'">Copy address</button>
+</section>
+
+<section class="card faq" style="margin-top:16px">
+ <h2>FAQ</h2>
+ <h3>What is the Kelly criterion?</h3><p>It's a formula for the share of your bankroll that grows it fastest over the long run, given your edge. For a binary contract priced at p that you believe wins with probability q, full Kelly stakes (q − p) / (1 − p) of your bankroll on YES.</p>
+ <h3>Why use half or quarter Kelly?</h3><p>Your probability estimates are never exact. Betting a fraction of Kelly gives up a little growth in exchange for much smaller drawdowns, which is why most professional bettors do it.</p>
+ <h3>Does it work for Kalshi, Manifold, or sportsbooks?</h3><p>Yes. Any yes/no market priced between 0 and 100 works. For sportsbooks, turn the odds into an implied price with the converter first.</p>
+ <h3>Is this financial advice?</h3><p>No. It's a math tool, and markets carry risk. Only bet what you can afford to lose, and follow the rules where you live.</p>
+</section>
+
+<footer>EdgeSizer · open source on <a href="https://github.com/gelimorto2/edgesizer">GitHub</a> · More tools: <a href="https://gelimorto2.github.io/invoicesnap/">InvoiceSnap</a> · <a href="https://gelimorto2.github.io/ratewise/">RateWise</a></footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);const usd=v=>(v<0?'-$':'$')+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+function kelly(){
+ const p=+$('price').value/100,q=+$('prob').value/100,B=+$('bank').value,fr=+$('frac').value,fee=+$('fee').value/100;
+ if(!(p>0&&p<1&&q>=0&&q<=1)){$('verdict').textContent='Enter a price between 0 and 100.';return}
+ // YES: cost p, net win (1-p)(1-fee). NO: cost 1-p, net win p(1-fee).
+ const side=q>=p?'YES':'NO', cost=side==='YES'?p:1-p, win=side==='YES'?q:1-q, b=(1-cost)*(1-fee)/cost;
+ const f=Math.max(0,(b*win-(1-win))/b), ev=win*b-(1-win), stake=B*f*fr, shares=stake/cost;
+ $('oSide').textContent=side;$('oEdge').textContent=((win-cost)*100).toFixed(1)+' pts';
+ $('oEv').textContent=(ev>=0?'+':'')+ev.toFixed(3);$('oStake').textContent=usd(stake);
+ $('oShares').textContent=Math.floor(shares).toLocaleString();$('oWin').textContent=usd(shares*(1-cost)*(1-fee));
+ const v=$('verdict');
+ if(f<=0){v.className='verdict bad';v.textContent='No edge after fees. Skip this one.'}
+ else{v.className='verdict';v.textContent=`Buy ${side}: stake ${(f*fr*100).toFixed(1)}% of your bankroll (${usd(stake)}).`}
+}
+function arb(){
+ const y=+$('ay').value/100,n=+$('an').value/100,bud=+$('abud').value,c=y+n,pairs=c>0?Math.floor(bud/c):0;
+ $('aCost').textContent=usd(c);$('aRet').textContent=((1/c-1)*100).toFixed(2)+'%';$('aPairs').textContent=pairs.toLocaleString();
+ $('aProf').textContent=usd(pairs*(1-c));const v=$('aVerdict');
+ if(c<1){v.className='verdict';v.textContent='Arbitrage found. Check liquidity, fees and that both markets resolve on the same terms.'}
+ else{v.className='verdict bad';v.textContent='No arbitrage: the pair costs $1 or more.'}
+}
+function conv(){const p=+$('cPrice').value/100;if(!(p>0&&p<1)){$('cOut').textContent='–';return}
+ const d=1/p,a=p>=.5?-Math.round(100*p/(1-p)):Math.round(100*(1-p)/p);$('cOut').textContent=d.toFixed(2)+' · '+(a>0?'+':'')+a}
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',()=>{kelly();arb();conv()}));kelly();arb();conv();
+</script>
+</body></html>
